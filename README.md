@@ -218,6 +218,7 @@ $$
 $$
 
 The third and fourth line is done by using the constant factor tule for summation:
+
 $$
 \sum ^{n}_{i=0}x=x_{1}+x_{2}+x_{3}\ldots x_{n}
 $$
@@ -225,6 +226,7 @@ $$
 If $x$ is a constant, this can be represented by $n(x)$. the $\overline{x}$ and $\overline{y}$ are means.
 
 We can use the $b_{0}$ above and solve for the second equation like so 
+
 $$
 \begin{aligned}\sum x\left( Y-b_{1}x-b_{0}\right) =0\\ \Rightarrow \sum x\left[ Y-b_{1}x-\left( \overline{Y}-b_{1}\overline{x}\right) \right] =0\\ \Rightarrow \sum x\left[ Y-\overline{Y}-b_{1}\left( x-\overline{x}\right) \right] =0\\ \Rightarrow \sum x\left( Y-\overline{Y}\right) -\sum b_{1}x\left( x-\overline{x}\right) =0\\ \Rightarrow b_{1}=\dfrac{\sum x\left( Y-\overline{Y}\right) }{\sum x\left( x-\overline{x}\right) }\end{aligned}
 $$
@@ -462,6 +464,9 @@ Althought z-score scaling might look like eliminating the relative scales betwee
 # Installation
 Activate env
 `souce bin/env/activate`
+
+Install deps
+`pip install -r requirements.txt`
 
 Run training program 
 `python train.py`
