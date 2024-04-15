@@ -31,7 +31,7 @@ Linear regression is regression using a straight line
 
 <td>
 
-Cubic regression is regression using a cubic curve
+logistic regression is regression using a logistic curve
 
 </td>
 
