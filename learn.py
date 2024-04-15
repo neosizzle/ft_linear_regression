@@ -210,6 +210,7 @@ ax[0].set_title("Actual scale")
 ax[1].set_title("Standardized scale")
 plt.tight_layout(pad=2)
 
+
 # regression LS
 slope, y_inter = least_squares(data_standardized)
 print(f"LS r2: {r2(data_standardized, slope, y_inter)}")
@@ -235,6 +236,10 @@ slope_reverted, y_inter_reverted = reverse_coefficients(data, slope, y_inter)
 x_regres = [10000, 250000]
 y_regres = [slope_reverted * 10000 + y_inter_reverted, slope_reverted * 250000 + y_inter_reverted]
 ax[0].plot(x_regres, y_regres, 'c', alpha=0.5)
+
+# write legends
+ax[0].legend(["Least Square", "Gradient Descent"])
+ax[1].legend(["Least Square", "Gradient Descent"])
 
 # write GD values to file
 f = open("values.csv", "a")
