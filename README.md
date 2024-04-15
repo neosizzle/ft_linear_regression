@@ -217,11 +217,9 @@ $$
 \begin{aligned}\sum \left( y-b_{1}x-b_{0}\right) =0\\ \Rightarrow \sum Y-\sum b,x-\sum b_{0}=0\\ \Rightarrow \sum Y-b_{1}\sum x-nb_{0}=0\\ \Rightarrow nb_{0}=\sum y-b_{1}\sum x\\ \Rightarrow b_{0}=\overline{y}-b_{1}\overline{x}\end{aligned}
 $$
 
-The third and fourth line is done by using the constant factor tule for summation:
+The third and fourth line is done by using the constant factor rule for summation:
 
-$$
-\sum ^{n}_{i=0}x=x_{1}+x_{2}+x_{3}\ldots x_{n}
-$$
+$\sum ^{n}_{i=0}x=x_{1}+x_{2}+x_{3}\ldots x_{n}$
 
 If $x$ is a constant, this can be represented by $n(x)$. the $\overline{x}$ and $\overline{y}$ are means.
 
