@@ -220,7 +220,7 @@ $$
 The third and fourth line is done by using the constant factor rule for summation:
 
 $$
-x
+\sum^{n}_{i=0}x=x_{1}+x_{2}+x_{3}\ldots x_{n}
 $$
 
 
