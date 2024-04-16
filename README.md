@@ -31,7 +31,7 @@ Linear regression is regression using a straight line
 
 <td>
 
-logistic regression is regression using a logistic curve
+Logistic regression is regression using a log-like curve
 
 </td>
 
@@ -81,9 +81,11 @@ So we start with a sample dataset; we get the mean of both the x and y values (i
 
 <table>
 <tr>
-    <td>
-        TODO insert graph pic here
-    </td>
+<td>
+        
+![image](https://hackmd.io/_uploads/ByFAwwjxA.png)
+
+</td>
     <td>
         * notice the linear regression is a line and can be
          y = mx + c
@@ -217,12 +219,11 @@ $$
 \begin{aligned}\sum \left( y-b_{1}x-b_{0}\right) =0\\ \Rightarrow \sum Y-\sum b,x-\sum b_{0}=0\\ \Rightarrow \sum Y-b_{1}\sum x-nb_{0}=0\\ \Rightarrow nb_{0}=\sum y-b_{1}\sum x\\ \Rightarrow b_{0}=\overline{y}-b_{1}\overline{x}\end{aligned}
 $$
 
-The third and fourth line is done by using the constant factor rule for summation:
+The third and fourth line is done by using the constant factor tule for summation:
 
 $$
 \sum^{n}_{i=0}x=x_{1}+x_{2}+x_{3}\ldots x_{n}
 $$
-
 
 If $x$ is a constant, this can be represented by $n(x)$. the $\overline{x}$ and $\overline{y}$ are means.
 
@@ -466,9 +467,6 @@ Althought z-score scaling might look like eliminating the relative scales betwee
 Activate env
 `souce bin/env/activate`
 
-Install deps
-`pip install -r requirements.txt`
-
 Run training program 
 `python train.py`
 
@@ -476,3 +474,251 @@ Run Prediction program
 `python predict.py`
 
 ![image](https://hackmd.io/_uploads/HJrkw3clA.png)
+
+# Benchmarks
+I also did some comparison between GD and Least squares method and here are the results;
+
+![image](https://hackmd.io/_uploads/S1vYqwse0.png)
+
+You can tune the learning rate and the other parameters to optimize the time, but in my case of a dataset of 200 data points with 40+- random deviation, any learning rate bigger than the ones  shown above will diverge. Notice how the 0.5 learning rate performs slower than the ones with smaller learning rates; Im guessing it is oscillating around the true minimum approximation until it stops which creates alot of uneccasary computations
+
+I didnt test with larger data size or more iterations because those will take forever to run on my machine, but I hope to see more robust and complete benchmarks of this; especially more options for the parameters to get a good idea on how to estimate those values
+
+Here is the benchmark code
+
+```python=
+import matplotlib.pyplot as plt
+import numpy as np
+import timeit
+
+def mean(set):
+	data_len = len(set)
+	total = 0
+	for i in set :
+		total += i
+	return total / data_len
+
+def generate_data(n):
+	rng = np.random.default_rng()
+	gradient = 1
+	res = [[], []] # [xs, ys]
+	for x in range(n):
+		noise = rng.random() * 40
+		res[0].append(gradient * x + noise)
+		noise = rng.random() * 40
+		res[1].append(gradient * x + noise)
+	return res
+
+# least squares method
+#
+# b1 = total of ((x - mean x) * (y - mean y)) / total of (x - mean x) ^ 2
+# b0 = mean y - (b1 * mean x)
+#
+def least_squares(data):
+	x_set = data[0]
+	y_set = data[1]
+	mean_x = mean(x_set)
+	mean_y = mean(y_set)
+	
+	total_x_m_mean_x_t_y_m_mean_y = 0
+	total_x_m_mean_x_sq = 0
+	for idx in range(len(x_set)):
+		x = x_set[idx]
+		y = y_set[idx]
+
+		x_m_mean_x = x - mean_x
+		y_m_mean_y = y - mean_y
+		total_x_m_mean_x_t_y_m_mean_y += (x_m_mean_x * y_m_mean_y)
+
+		x_m_mean_x_sq = x_m_mean_x * x_m_mean_x
+		total_x_m_mean_x_sq += x_m_mean_x_sq
+	b1 = total_x_m_mean_x_t_y_m_mean_y / total_x_m_mean_x_sq
+	b0 = mean_y - (b1 * mean_x)
+
+	# print(f"b1 {b1}, b0 {b0}")
+	return (b1, b0)
+
+def derivitive_b1_squared_residuals(x, y, b1, b0):
+	return (-2 * x *(y - (b1 * x) - b0))
+
+def derivitive_b0_squared_residuals(x, y, b1, b0):
+	return (-2 * (y - (b1 * x) - b0))
+
+def step_size_out_of_range(number, range) :
+	return number < -range or number > range
+
+def gradiant_descent(data, init_b1, init_b0, learning_rate):
+	x_set = data[0]
+	y_set = data[1]
+	step_size_b0 = 6969
+	step_size_b1 = 6969
+	step_size_range = 0.001
+	
+	while step_size_out_of_range(step_size_b0, step_size_range) or step_size_out_of_range(step_size_b1, step_size_range) :
+		should_change_b0 = False
+		should_change_b1 = False
+
+		# GD for loss function for b0
+		if step_size_out_of_range(step_size_b0, step_size_range) :
+			sum_of_b0s = 0
+			for idx in range(len(x_set)):
+				new_b0 = derivitive_b0_squared_residuals(x_set[idx], y_set[idx], init_b1, init_b0)
+				sum_of_b0s += new_b0
+			step_size_b0 = sum_of_b0s * learning_rate
+			should_change_b0 = True
+
+		# GD for loss function for b1
+		if step_size_out_of_range(step_size_b1, step_size_range) :
+			sum_of_b1s = 0
+			for idx in range(len(x_set)):
+				new_b1 = derivitive_b1_squared_residuals(x_set[idx], y_set[idx], init_b1, init_b0)
+				sum_of_b1s += new_b1
+			step_size_b1 = sum_of_b1s * learning_rate
+			should_change_b1 = True
+
+		# update b0 and b1 babsed on stepsize
+		if should_change_b0:
+			init_b0 = init_b0 - step_size_b0
+		if should_change_b1:
+			init_b1 = init_b1 - step_size_b1
+
+	# print(f"b1 {init_b1} b0 {init_b0}")
+	return (init_b1, init_b0)
+
+plt.style.use('_mpl-gallery')
+
+# make the data
+fig, ax = plt.subplots(figsize=(10, 10))
+data = generate_data(200)
+
+# regression
+slope, y_inter = least_squares(data)
+x_regres = [0, 200]
+y_regres = [y_inter, slope * 200 + y_inter]
+ax.plot(x_regres, y_regres, 'r', alpha=0.5)
+
+slope, y_inter = gradiant_descent(data, 1, 0.5, 0.00000000001)
+x_regres = [0, 200]
+y_regres = [y_inter, slope * 200 + y_inter]
+ax.plot(x_regres, y_regres, 'g', alpha=0.5)
+# print(step_size_out_of_range(1.306884224922395e+19, 1))
+
+# plot data
+ax.plot(data[0], data[1], 'bo')
+
+ax.set(xlim=(0, 200), xticks=np.arange(1, 200),
+       ylim=(0, 200), yticks=np.arange(1, 200))
+plt.savefig("matplotlib.png")
+
+iters = 32
+
+data = generate_data(20)
+time = (timeit.timeit("least_squares(data)", globals=locals(), number=iters) * 1000000) / iters # to micro
+print(f"least_squares(data_20): {time} microseconds, iter: {iters}")
+
+data = generate_data(30)
+time = (timeit.timeit("least_squares(data)", globals=locals(), number=iters) * 1000000) / iters # to micro
+print(f"least_squares(data_30): {time} microseconds, iter: {iters}")
+
+data = generate_data(40)
+time = (timeit.timeit("least_squares(data)", globals=locals(), number=iters) * 1000000) / iters # to micro
+print(f"least_squares(data_40): {time} microseconds, iter: {iters}")
+
+data = generate_data(200)
+time = (timeit.timeit("least_squares(data)", globals=locals(), number=iters) * 1000000) / iters # to micro
+print(f"least_squares(data_200): {time} microseconds, iter: {iters}")
+print("")
+
+# data = generate_data(300)
+# time = (timeit.timeit("least_squares(data)", globals=locals(), number=iters) * 1000000) / iters # to micro
+# print(f"least_squares(data_300): {time} microseconds, iter: {iters}")
+
+# data = generate_data(400)
+# time = (timeit.timeit("least_squares(data)", globals=locals(), number=iters) * 1000000) / iters # to micro
+# print(f"least_squares(data_400): {time} microseconds, iter: {iters}")
+
+# data = generate_data(2000)
+# time = (timeit.timeit("least_squares(data)", globals=locals(), number=iters) * 1000000) / iters # to micro
+# print(f"least_squares(data_2000): {time} microseconds, iter: {iters}")
+
+# data = generate_data(3000)
+# time = (timeit.timeit("least_squares(data)", globals=locals(), number=iters) * 1000000) / iters # to micro
+# print(f"least_squares(data_3000): {time} microseconds, iter: {iters}")
+
+# data = generate_data(4000)
+# time = (timeit.timeit("least_squares(data)", globals=locals(), number=iters) * 1000000) / iters # to micro
+# print(f"least_squares(data_4000): {time} microseconds, iter: {iters}")
+
+
+data = generate_data(20)
+time = (timeit.timeit("gradiant_descent(data, 1, 0.5, 0.00000000001)", globals=locals(), number=iters) * 1000000) / iters # to micro
+print(f"gradiant_descent(data_20, 1, 0.5, 0.00000000001): {time} microseconds, iter: {iters}")
+
+data = generate_data(30)
+time = (timeit.timeit("gradiant_descent(data, 1, 0.5, 0.00000000001)", globals=locals(), number=iters) * 1000000) / iters # to micro
+print(f"gradiant_descent(data_30, 1, 0.5, 0.00000000001): {time} microseconds, iter: {iters}")
+
+data = generate_data(40)
+time = (timeit.timeit("gradiant_descent(data, 1, 0.5, 0.00000000001)", globals=locals(), number=iters) * 1000000) / iters # to micro
+print(f"gradiant_descent(data_40, 1, 0.5, 0.00000000001): {time} microseconds, iter: {iters}")
+
+data = generate_data(200)
+time = (timeit.timeit("gradiant_descent(data, 1, 0.5, 0.00000000001)", globals=locals(), number=iters) * 1000000) / iters # to micro
+print(f"gradiant_descent(data_200, 1, 0.5, 0.00000000001): {time} microseconds, iter: {iters}")
+
+print("")
+
+data = generate_data(20)
+time = (timeit.timeit("gradiant_descent(data, 1, 0.5, 0.5)", globals=locals(), number=iters) * 1000000) / iters # to micro
+print(f"gradiant_descent(data_20, 1, 0.5, 0.5): {time} microseconds, iter: {iters}")
+
+data = generate_data(30)
+time = (timeit.timeit("gradiant_descent(data, 1, 0.5, 0.5)", globals=locals(), number=iters) * 1000000) / iters # to micro
+print(f"gradiant_descent(data_30, 1, 0.5, 0.5): {time} microseconds, iter: {iters}")
+
+data = generate_data(40)
+time = (timeit.timeit("gradiant_descent(data, 1, 0.5, 0.5)", globals=locals(), number=iters) * 1000000) / iters # to micro
+print(f"gradiant_descent(data_40, 1, 0.5, 0.5): {time} microseconds, iter: {iters}")
+
+data = generate_data(200)
+time = (timeit.timeit("gradiant_descent(data, 1, 0.5, 0.5)", globals=locals(), number=iters) * 1000000) / iters # to micro
+print(f"gradiant_descent(data_200, 1, 0.5, 0.5): {time} microseconds, iter: {iters}")
+
+print("")
+
+data = generate_data(20)
+time = (timeit.timeit("gradiant_descent(data, 0, 1, 0.00000000001)", globals=locals(), number=iters) * 1000000) / iters # to micro
+print(f"gradiant_descent(data_20, 0, 1, 0.00000000001): {time} microseconds, iter: {iters}")
+
+data = generate_data(30)
+time = (timeit.timeit("gradiant_descent(data, 0, 1, 0.00000000001)", globals=locals(), number=iters) * 1000000) / iters # to micro
+print(f"gradiant_descent(data_30, 0, 1, 0.00000000001): {time} microseconds, iter: {iters}")
+
+data = generate_data(40)
+time = (timeit.timeit("gradiant_descent(data, 0, 1, 0.00000000001)", globals=locals(), number=iters) * 1000000) / iters # to micro
+print(f"gradiant_descent(data_40, 0, 1, 0.00000000001): {time} microseconds, iter: {iters}")
+
+data = generate_data(200)
+time = (timeit.timeit("gradiant_descent(data, 0, 1, 0.00000000001)", globals=locals(), number=iters) * 1000000) / iters # to micro
+print(f"gradiant_descent(data_200, 0, 1, 0.00000000001): {time} microseconds, iter: {iters}")
+
+# data = generate_data(300)
+# time = (timeit.timeit("gradiant_descent(data)", globals=locals(), number=iters) * 1000000) / iters # to micro
+# print(f"gradiant_descent(data_300): {time} microseconds, iter: {iters}")
+
+# data = generate_data(400)
+# time = (timeit.timeit("gradiant_descent(data)", globals=locals(), number=iters) * 1000000) / iters # to micro
+# print(f"gradiant_descent(data_400): {time} microseconds, iter: {iters}")
+
+# data = generate_data(2000)
+# time = (timeit.timeit("gradiant_descent(data)", globals=locals(), number=iters) * 1000000) / iters # to micro
+# print(f"gradiant_descent(data_2000): {time} microseconds, iter: {iters}")
+
+# data = generate_data(3000)
+# time = (timeit.timeit("gradiant_descent(data)", globals=locals(), number=iters) * 1000000) / iters # to micro
+# print(f"gradiant_descent(data_3000): {time} microseconds, iter: {iters}")
+
+# data = generate_data(4000)
+# time = (timeit.timeit("gradiant_descent(data)", globals=locals(), number=iters) * 1000000) / iters # to micro
+# print(f"gradiant_descent(data_4000): {time} microseconds, iter: {iters}")
+```
