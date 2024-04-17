@@ -465,7 +465,7 @@ Althought z-score scaling might look like eliminating the relative scales betwee
 
 # Installation
 Activate env
-`souce bin/env/activate`
+`python -m venv env ; source bin/env/activate`
 
 Run training program 
 `python train.py`
